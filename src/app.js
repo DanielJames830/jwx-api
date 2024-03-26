@@ -1,3 +1,5 @@
+require('dotenv').config({debug: true});
+
 const express = require("express");
 const cors = require("cors");
 const app = express();
@@ -39,7 +41,7 @@ app.get("", (req, res) => {
 });
 
 async function initializeFirebase() {
-	const credentials = require("../env/jwx-api-4df70568a1ab.json");
+	const credentials = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JWXDATA);
 
 	await connect(credentials, "databaseURI")
 }
