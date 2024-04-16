@@ -1,21 +1,12 @@
-require('dotenv').config({debug: true});
+require("dotenv").config({ debug: true });
 
 const express = require("express");
 const cors = require("cors");
-const app = express();
+
 const testRouter = require("./routers/test");
-const {
-	initializeApp,
-	applicationDefault,
-	cert,
-} = require("firebase-admin/app");
-const {
-	getFirestore,
-	Timestamp,
-	FieldValue,
-	Filter,
-} = require("firebase-admin/firestore");
-const {connect} = require('firefose');
+
+const { connect } = require("firefose");
+const app = express();
 
 // Configure express to allow requests from anywhere
 app.use(cors());
@@ -43,7 +34,7 @@ app.get("", (req, res) => {
 async function initializeFirebase() {
 	const credentials = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JWXDATA);
 
-	await connect(credentials, "databaseURI")
+	await connect(credentials, "databaseURI");
 }
 
 initializeFirebase();
