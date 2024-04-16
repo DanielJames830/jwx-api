@@ -57,3 +57,6 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
 	console.log("Server is up on port " + port);
 });
+
+
+// Currently Deployed to Azure. Change to Firebase blaze plan.
