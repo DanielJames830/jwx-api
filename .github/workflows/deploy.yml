@@ -25,8 +25,6 @@ jobs:
       run: npm install
 
     - name: Deploy to Firebase
-      uses: w9jds/firebase-action@v2.2.2
-      with:
-        args: deploy --only hosting
+      run: npm run deploy
       env:
         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
