@@ -11,7 +11,7 @@ router.post('/test', async (req, res) => {
         const data = await Test.create(req.body);
         res.status(201).send(data);
     } catch (e) {
-        res.status(400).send(e);
+        res.status(400).send(res.body);
     }
 
 }) 
