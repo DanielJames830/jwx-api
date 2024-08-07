@@ -9,7 +9,7 @@ const functions = require("firebase-functions");
 
 // Define routers here
 const testRouter = require("./routers/test");
-
+const memberRouter = require("./routers/member");
 const { connect } = require("firefose");
 const app = express();
 
@@ -29,6 +29,7 @@ app.use(express.json());
 
 // Define routers here
 app.use(testRouter);
+app.use(memberRouter);
 
 // Set up a default route ('') and return 'Hello World!' in the
 // response when requests are received
