@@ -56,3 +56,20 @@ app.listen(port, () => {
 });
 
 exports.api = functions.https.onRequest(app)
+const admin = require('firebase-admin');
+admin.initializeApp();
+const { Query } = require("firefose");
+const member = require("./models/member");
+
+exports.scheduledFunction = functions.pubsub.schedule('every 5 minutes').onRun(async (context) => {
+	console.log('Checking times');
+	const query = new Query().where('lastClockInTime', '==', 0);
+	const members = await member.find(query);
+
+	members.forEach(member => {
+		if(member.monthlyTimeRemaining - (member.lastClockInTime - Date.now) <= 0 ) {
+			console.log('User: ' + member.admin + ' has no more time remaining.')
+		}
+	});
+
+  });
