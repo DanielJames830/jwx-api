@@ -53,14 +53,25 @@ router.put("/member/:id/clock-in-out", async (req, res) => {
 	try {
 		const data = await Member.findById(req.params.id);
 
-		let response;
+        let response;
+        if(data.isMembershipActive == false) {
+            console.log('Member is not active!')
+            res.status(401).send("Unauthorized: Membership is not active.")
+            return;
+        }
+
+		
 		if (data.isClockOut == true) {
-            console.log('Clocking out')
+            console.log('Clocking out');
             const timeRemaining = data.monthlyTimeRemaining - (Date.now() - data.lastClockInTime);
             console.log(`This member has ${timeRemaining / (1000 * 60)} minutes remaining`)
 			response = await Member.updateById(req.params.id, { isClockOut: false, lastClockInTime: 0, monthlyTimeRemaining: timeRemaining});
 		} else if(data.isClockOut == false) {
-            console.log('Clocking in')
+            console.log('Clocking in');
+            if(data.monthlyTimeRemaining <= 0) {
+                res.status(401).send("Unauthorized: Member has no time remaining.");
+                return;
+            }
 			response = await Member.updateById(req.params.id, {
 				isClockOut: true,
 				lastClockInTime: Date.now(),
@@ -72,5 +83,7 @@ router.put("/member/:id/clock-in-out", async (req, res) => {
 		res.status(400).send({ error: error.message });
 	}
 });
+
+
 
 module.exports = router;
