@@ -55,4 +55,4 @@ app.listen(port, () => {
 	console.log("Server is up on port " + port);
 });
 
-exports.api = functions.https.onRequest(server);
+exports.api = functions.https.onRequest(app);
