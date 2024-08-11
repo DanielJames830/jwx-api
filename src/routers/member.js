@@ -7,6 +7,8 @@ const sgMail = require("@sendgrid/mail");
 router.post("/member", async (req, res) => {
 	console.log(req.body);
 	try {
+        await verifyMemberData(req.body);
+
 		const data = await Member.create(req.body);
 		res.status(201).send(data);
 	} catch (e) {
@@ -17,6 +19,16 @@ router.post("/member", async (req, res) => {
 router.get("/member", async (req, res) => {
 	try {
 		const data = await Member.findById(req.body.id);
+		res.status(200).send(data);
+	} catch (e) {
+		res.status(400).send({ error: e.message });
+	}
+});
+
+router.post("/members", async (req, res) => {
+	const query = new Query().where('isClockOut', '==', req.body.isClockOut)
+	try {
+		const data = await Member.find(query);
 		res.status(200).send(data);
 	} catch (e) {
 		res.status(400).send({ error: e.message });
@@ -35,8 +47,8 @@ router.patch("/member/:id/activate", async (req, res) => {
 		});
 		sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 		const msg = {
-			to: data.email, // Recipient's email address
-			from: "daniel.manley@juiceworks3d.com", // Verified sender's email address
+			to: data.email,
+			from: "daniel.manley@juiceworks3d.com",
 			subject: "Welcome to the club!",
 			templateId: "d-b280ed837f3345d39b9fe3728f594197",
 			dynamic_template_data: {
@@ -73,9 +85,9 @@ router.patch("/member/:id/deactivate", async (req, res) => {
 	}
 });
 
-router.put("/member/:id/clock-in-out", async (req, res) => {
+router.put("/member/clock-in-out", async (req, res) => {
 	try {
-		const data = await Member.findById(req.params.id);
+		const data = await Member.findById(req.query.id);
 
 		let response;
 		if (data.isMembershipActive == false) {
@@ -91,7 +103,7 @@ router.put("/member/:id/clock-in-out", async (req, res) => {
 			console.log(
 				`This member has ${timeRemaining / (1000 * 60)} minutes remaining`
 			);
-			response = await Member.updateById(req.params.id, {
+			response = await Member.updateById(req.query.id, {
 				isClockOut: false,
 				lastClockInTime: 0,
 				monthlyTimeRemaining: timeRemaining,
@@ -102,13 +114,13 @@ router.put("/member/:id/clock-in-out", async (req, res) => {
 				res.status(401).send("Unauthorized: Member has no time remaining.");
 				return;
 			}
-			response = await Member.updateById(req.params.id, {
+			response = await Member.updateById(req.query.id, {
 				isClockOut: true,
 				lastClockInTime: Date.now(),
 			});
 		}
 
-		res.status(200).send(data);
+		res.status(200).send(response);
 	} catch (error) {
 		res.status(400).send({ error: error.message });
 	}

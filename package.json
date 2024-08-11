@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "deploy": "firebase deploy"
+    "deploy": "firebase deploy --only functions:api"
   },
   "author": "",
   "license": "ISC",
