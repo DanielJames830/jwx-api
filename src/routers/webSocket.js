@@ -2,6 +2,9 @@ const WebSocket = require("ws"); // Ensure WebSocket is properly required at the
 
 let wss; // Initialize the WebSocket server variable
 
+
+// Creates a new web socket only if wss is null (this is a singeleton)
+// Author: Daniel Manley
 function createNewWebSocket(server) {
 	if (!wss) {
 		wss = new WebSocket.Server({ server: server });
