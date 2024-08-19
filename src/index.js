@@ -4,13 +4,14 @@ require("dotenv").config({ path: '.env'});
 // Server requirements
 const express = require("express");
 const cors = require("cors");
-const functions = require("firebase-functions");
+const http = require("http");
 
 
 // Define routers here
 const testRouter = require("./routers/test");
 const memberRouter = require("./routers/member");
 const { connect } = require("firefose");
+const { createNewWebSocket } = require("./routers/webSocket");
 const app = express();
 
 // Configure express to allow requests from anywhere
@@ -37,6 +38,9 @@ app.get("/", (req, res) => {
 	res.send("Hello World!");
 });
 
+const server = http.createServer(app);
+createNewWebSocket(server);
+
 async function initializeFirebase() {
 	const credentials = JSON.parse(process.env.ACCOUNT_KEY);
 
@@ -47,12 +51,10 @@ initializeFirebase();
 
 // Set port to the PORT environment variable (if it is defined),
 // otherwise set it to 3000
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Configure the server to listen for connections on the port.
 // Print to the console when ready for connections
-app.listen(port, () => {
+server.listen(port, '10.0.1.27',() => {
 	console.log("Server is up on port " + port);
 });
-
-exports.api = functions.https.onRequest(app);

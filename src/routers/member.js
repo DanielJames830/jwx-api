@@ -1,8 +1,11 @@
 const express = require("express");
-const { getFirestore } = require("firebase-admin/firestore");
+const { verifyMemberData }= require('../middleware/verifyMemberData');
 const router = express.Router();
 const Member = require("../models/member");
 const sgMail = require("@sendgrid/mail");
+const { Query } = require("firefose");
+const { getWebSocketInstance } = require("./webSocket");
+const { WebSocket } = require("ws");
 
 router.post("/member", async (req, res) => {
 	console.log(req.body);
@@ -18,7 +21,7 @@ router.post("/member", async (req, res) => {
 
 router.get("/member", async (req, res) => {
 	try {
-		const data = await Member.findById(req.body.id);
+		const data = await Member.findById(req.query.id);
 		res.status(200).send(data);
 	} catch (e) {
 		res.status(400).send({ error: e.message });
@@ -88,7 +91,12 @@ router.patch("/member/:id/deactivate", async (req, res) => {
 router.put("/member/clock-in-out", async (req, res) => {
 	try {
 		const data = await Member.findById(req.query.id);
-
+		const wss = getWebSocketInstance();
+		wss.clients.forEach((client) => {
+			if (client.readyState === WebSocket.OPEN) {
+				client.send(`${data.first} ${data.last} has swiped their card!`);
+			}
+		});
 		let response;
 		if (data.isMembershipActive == false) {
 			console.log("Member is not active!");

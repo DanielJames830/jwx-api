@@ -10,7 +10,7 @@ async function checkDuplicateEmail(email) {
 
     const members = await Member.find(query);
     
-    if(members.length > 0 || members == undefined) {
+    if(members.length > 0 || members != undefined) {
         throw new Error("A member with this email already exists!");
     } 
 }
