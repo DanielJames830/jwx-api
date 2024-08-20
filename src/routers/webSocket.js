@@ -1,3 +1,7 @@
+// Please include all websocket related code in here.
+//Author: Daniel Manley
+
+
 const WebSocket = require("ws"); // Ensure WebSocket is properly required at the top
 
 let wss; // Initialize the WebSocket server variable
@@ -7,7 +11,9 @@ let wss; // Initialize the WebSocket server variable
 // Author: Daniel Manley
 function createNewWebSocket(server) {
 	if (!wss) {
-		wss = new WebSocket.Server({ server: server });
+		wss = new WebSocket.Server({ server: server }); // Establish Websocket connection
+
+
 
 		wss.on("connection", (ws) => {
 			ws.isAlive = true;
@@ -41,6 +47,8 @@ function createNewWebSocket(server) {
 	return wss;
 }
 
+
+// Return the existing web socket. If none exists, throw an error.
 function getWebSocketInstance() {
 	if (!wss) {
 		throw new Error(

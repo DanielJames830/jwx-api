@@ -14,7 +14,6 @@ const { connect } = require("firefose");
 const { createNewWebSocket } = require("./routers/webSocket");
 
 // Define routers here
-const testRouter = require("./routers/test");
 const accountRouter = require("./routers/account")
 const memberRouter = require("./routers/member");
 
@@ -37,10 +36,7 @@ app.use(function (req, res, next) {
 	next();
 });
 
-
-
 // Define routers here
-app.use(testRouter);
 app.use(memberRouter);
 app.use(accountRouter);
 
