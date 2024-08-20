@@ -1,20 +1,73 @@
 const express = require("express");
-const { verifyMemberData }= require('../middleware/verifyMemberData');
+
 const router = express.Router();
 const Member = require("../models/member");
 const sgMail = require("@sendgrid/mail");
 const { Query } = require("firefose");
 const { getWebSocketInstance } = require("./webSocket");
 const { WebSocket } = require("ws");
+const Account = require("../models/account");
 
 router.post("/member", async (req, res) => {
-	console.log(req.body);
 	try {
-        await verifyMemberData(req.body);
+		const memberData = {
+			first: req.body.first,
+			last: req.body.last,
+			born: req.body.born,
+			isMembershipActive: true,
+		};
 
-		const data = await Member.create(req.body);
-		res.status(201).send(data);
+		const newMember = await Member.create(memberData);
+		console.log("New member created:", newMember);
+
+		// Check if account with the given email exists
+		const existingAccount = await Account.find(new Query().where('email', '==', req.body.email));
+		console.log(existingAccount);
+		if (existingAccount.length === 0) {
+			console.log("No account found with that email.")
+			// If account does not exist, create a new one
+			const newAccountData = {
+				email: req.body.email,
+				phone: req.body.phone,
+				first: req.body.first,
+				last: req.body.last,
+				members: [newMember.id]
+			};
+			await Account.create(newAccountData);
+			console.log("New account created for email:", req.body.email);
+		} else {
+			existingAccount[0].members.push(newMember.id)
+			// If account exists, add the new member to its members array
+			await Account.updateById(existingAccount[0].id, {members: existingAccount[0].members})
+			console.log("Member added to existing account:", existingAccount);
+		}
+
+		if(req.body.sendEmail) {
+			sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+		const msg = {
+			to: req.body.email,
+			from: "daniel.manley@juiceworks3d.com",
+			subject: "Welcome to the club!",
+			templateId: "d-b280ed837f3345d39b9fe3728f594197",
+			dynamic_template_data: {
+				firstName: req.body.first,
+			},
+		};
+
+		// Send the email
+		sgMail
+			.send(msg)
+			.then(() => {
+				console.log("Email sent successfully");
+			})
+			.catch((error) => {
+				console.error("Error sending email:", error);
+			});
+		}
+
+		res.status(201).send(newMember);
 	} catch (e) {
+		console.error("Error in /member endpoint:", e);
 		res.status(400).send({ error: e.message });
 	}
 });
@@ -27,6 +80,15 @@ router.get("/member", async (req, res) => {
 		res.status(400).send({ error: e.message });
 	}
 });
+
+router.get("/members", async (req, res) => {
+	try {
+		const data = await Member.find(new Query());
+		res.status(200).send(data);
+	} catch (e) {
+		res.status(400).send({ error: e.message });
+	}
+})
 
 router.post("/members", async (req, res) => {
 	const query = new Query().where('isClockOut', '==', req.body.isClockOut)
@@ -48,26 +110,6 @@ router.patch("/member/:id/activate", async (req, res) => {
 			isMembershipActive: true,
 			monthlyTimeRemaining: 21600000,
 		});
-		sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-		const msg = {
-			to: data.email,
-			from: "daniel.manley@juiceworks3d.com",
-			subject: "Welcome to the club!",
-			templateId: "d-b280ed837f3345d39b9fe3728f594197",
-			dynamic_template_data: {
-				firstName: data.first,
-			},
-		};
-
-		// Send the email
-		sgMail
-			.send(msg)
-			.then(() => {
-				console.log("Email sent successfully");
-			})
-			.catch((error) => {
-				console.error("Error sending email:", error);
-			});
 
 		res.status(200).send(data2);
 	} catch (error) {

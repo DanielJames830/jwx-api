@@ -38,12 +38,6 @@ const memberSchema = new Schema({
     lastClockInTime: {
         type: Number,
     },
-    email: {
-        type: String,
-        required: true,
-        unique: true,
-    }
-
 }, {timestamp: true});
 
 

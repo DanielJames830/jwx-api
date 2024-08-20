@@ -15,6 +15,7 @@ const { createNewWebSocket } = require("./routers/webSocket");
 
 // Define routers here
 const testRouter = require("./routers/test");
+const accountRouter = require("./routers/account")
 const memberRouter = require("./routers/member");
 
 // new instance of the express server
@@ -41,6 +42,7 @@ app.use(function (req, res, next) {
 // Define routers here
 app.use(testRouter);
 app.use(memberRouter);
+app.use(accountRouter);
 
 // Set up a default route ('') and return 'Hello World!' in the
 // response when requests are received
@@ -69,6 +71,6 @@ const port = process.env.PORT || 3000;
 
 // Configure the server to listen for connections on the port.
 // Print to the console when ready for connections
-server.listen(port, '10.0.1.27',() => {
+server.listen(port, '10.1.10.147', () => {
 	console.log("Server is up on port " + port);
 });
