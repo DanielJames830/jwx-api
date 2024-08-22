@@ -31,7 +31,16 @@ router.put("/account", async (req, res) => {
         // Return a 400 (Bad Request) for any failure.
         res.status(400).send({ error: e.message });
     }
-})
+});
+
+router.put("/account/update", async (req, res) => {
+    try {
+        const data = await Account.updateById(req.query.id, req.body);
+        res.status(200).send(data);
+    } catch(e) {
+        res.status(400).send({error: e.message});
+    }
+});
 
 // This endpoint is for to find the account with a specific id
 router.get("/account", async (req, res) => {

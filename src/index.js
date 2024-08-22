@@ -3,7 +3,7 @@
 // appropriate comments
 // Author: Daniel Manley
 
-// For readin of enviroment variables stored in .env
+// For reading of enviroment variables stored in .env
 require("dotenv").config({ path: '.env'});
 
 // Server requirements
@@ -14,8 +14,9 @@ const { connect } = require("firefose");
 const { createNewWebSocket } = require("./routers/webSocket");
 
 // Define routers here
-const accountRouter = require("./routers/account")
+const accountRouter = require("./routers/account");
 const memberRouter = require("./routers/member");
+const webhooks = require("./routers/webhooks");
 
 // new instance of the express server
 const app = express();
@@ -25,6 +26,7 @@ app.use(cors());
 
 // Configure express to read JSON objects in the body of requests.
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Define headers
 app.use(function (req, res, next) {
@@ -39,6 +41,7 @@ app.use(function (req, res, next) {
 // Define routers here
 app.use(memberRouter);
 app.use(accountRouter);
+app.use(webhooks);
 
 // Set up a default route ('') and return 'Hello World!' in the
 // response when requests are received
@@ -67,6 +70,6 @@ const port = process.env.PORT || 3000;
 
 // Configure the server to listen for connections on the port.
 // Print to the console when ready for connections
-server.listen(port, '10.1.10.147', () => {
+server.listen(port, () => {
 	console.log("Server is up on port " + port);
 });
