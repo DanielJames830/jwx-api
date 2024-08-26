@@ -42,8 +42,9 @@ const memberSchema = new Schema({
         type: Boolean,
         default: false,
     },
-    lastClockInTime: {
-        type: Number,
+    clockInTimes: {
+        type: Array,
+        default: [],
     },
 }, {timestamp: true});
 

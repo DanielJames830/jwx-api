@@ -4,12 +4,15 @@
 // requirements
 const express = require("express");
 const router = express.Router();
+const axios = require('axios');
 const Member = require("../models/member");
 const sgMail = require("@sendgrid/mail");
 const { Query } = require("firefose");
-const { getWebSocketInstance } = require("./webSocket");
-const { WebSocket } = require("ws");
 const Account = require("../models/account");
+
+const apiClient = axios.create({
+	baseURL: 'http://localhost:3000',  // Server base URL
+  });
 
 // The end point creates new members and either associates them with
 // an existing account or creates a new account if none exists.
@@ -21,7 +24,6 @@ router.post("/member", async (req, res) => {
 			first: req.body.first,
 			last: req.body.last,
 			born: req.body.born,
-			isMembershipActive: true,
 		};
 
 		// Check if account with the given email exists
@@ -46,22 +48,24 @@ router.post("/member", async (req, res) => {
 			console.log("Member added to existing account:", memberAccount);
 		}
 
-		// Assuming there have not been any errors, you can now create the 
+		// Assuming there have not been any errors, you can now create the
 		// new member
 		const newMember = await Member.create(memberData);
 		console.log("New member created:", newMember);
-
+		
+		// Activate their membership
+		apiClient.patch("/member/activate/?id=" + newMember.id);
 		memberAccount[0].members.push(newMember.id);
 
-		// update the associated account to include this 
+		// update the associated account to include this
 		// new membership
 		await Account.updateById(memberAccount[0].id, {
 			members: memberAccount[0].members,
 		});
 
 		// Only send an email if requested by the client.
-		// If you aren't seeing any emails being sent, check your request 
-		// for "sendEmail": true 
+		// If you aren't seeing any emails being sent, check your request
+		// for "sendEmail": true
 		if (req.body.sendEmail) {
 			sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 			const msg = {
@@ -88,22 +92,21 @@ router.post("/member", async (req, res) => {
 		// Return a 201 (Created) status if successful.
 		res.status(201).send(newMember);
 	} catch (e) {
-
 		// Return a 400 (Bad Request) for any failure.
 		console.error("Error in /member endpoint:", e);
 		res.status(400).send({ error: e.message });
 	}
 });
 
-// This endpoint gets the member specified within the 
+// This endpoint gets the member specified within the
 // request's queries. (example: https://localhost:3000/member?id=12345678)
 router.get("/member", async (req, res) => {
 	try {
 		const data = await Member.findById(req.query.id);
-		
+
 		// Return a 400 (Bad Request) if no user exists with
 		// the provided id
-		if(data == null) {
+		if (data == null) {
 			res.status(400).send("No such user exists.");
 			return;
 		}
@@ -111,7 +114,6 @@ router.get("/member", async (req, res) => {
 		// Return a 200 (OK) status if a member was found by that Id.
 		res.status(200).send(data);
 	} catch (e) {
-
 		// Return a 400 (Bad Request) for any failure.
 		res.status(400).send({ error: e.message });
 	}
@@ -145,17 +147,16 @@ router.post("/members", async (req, res) => {
 
 // This endpoint will activate the membership of whichever member id is specified
 // in the url.
-router.patch("/member/:id/activate", async (req, res) => {
+router.patch("/member/activate", async (req, res) => {
 	try {
-
 		// Get the member with the correspoding Id.
-		const data = await Member.findById(req.params.id);
+		const data = await Member.findById(req.query.id);
 		console.log(
 			`This member has been allotted ${28800000 / (1000 * 60)} minutes`
 		);
 
 		// Assign the member field monthlyTimeRemaining with 8 hours in miliseconds.
-		const data2 = await Member.updateById(req.params.id, {
+		const data2 = await Member.updateById(req.query.id, {
 			isMembershipActive: true,
 			monthlyTimeRemaining: 28800000,
 		});
@@ -163,12 +164,10 @@ router.patch("/member/:id/activate", async (req, res) => {
 		// return a 200 (OK) with the updated fields.
 		res.status(200).send(data2);
 	} catch (error) {
-
 		// Return a 400 (Bad Request) for any failure.
 		res.status(400).send({ error: error.message });
 	}
 });
-
 
 // This endpoint will dactivate the membership of whichever member id is specified
 // in the url.
@@ -183,7 +182,6 @@ router.patch("/member/:id/deactivate", async (req, res) => {
 		// return a 200 (OK) with the updated fields.
 		res.status(200).send(data);
 	} catch (error) {
-
 		// Return a 400 (Bad Request) for any failure.
 		res.status(400).send({ error: error.message });
 	}
@@ -192,20 +190,11 @@ router.patch("/member/:id/deactivate", async (req, res) => {
 // This endpoint is responsible for clocking members in and out.
 router.put("/member/clock-in-out", async (req, res) => {
 	try {
-
 		// Find the member with the id inside the query of the request.
 		const data = await Member.findById(req.query.id);
 
-		// Retrieve the websocket instance so that we can send a message
-		// to our terminal
-		const wss = getWebSocketInstance();
-		wss.clients.forEach((client) => {
-			if (client.readyState === WebSocket.OPEN) {
-				client.send(`${data.first} ${data.last} has swiped their card!`);
-			}
-		});
-
-		let response; // Will be used to send to the client
+		// Will be used to send to the client
+		let response;
 
 		// Return a 401 (Unauthorized) status if the swiped user is not an active member.
 		if (data.isMembershipActive == false) {
@@ -213,23 +202,35 @@ router.put("/member/clock-in-out", async (req, res) => {
 			res.status(401).send("Unauthorized: Membership is not active.");
 			return;
 		}
+
 		// Clock out the user if they are presently clocked in.
 		if (data.isClockOut == true) {
 			console.log("Clocking out");
+			data.clockInTimes.push(Date.now());
 
 			// Subtract the time they clocked out from the time they clocked in to subtract
 			// from their monthly allotted time.
-			const timeRemaining =
-				data.monthlyTimeRemaining - (Date.now() - data.lastClockInTime);
-			console.log(
-				`This member has ${timeRemaining / (1000 * 60)} minutes remaining`
-			);
-			response = await Member.updateById(req.query.id, {
-				isClockOut: false,
-				lastClockInTime: 0,
-				monthlyTimeRemaining: timeRemaining,
-			});
-		} 
+			// Ensure there are at least two clock-in times
+			if (data.clockInTimes.length >= 2) {
+				const lastClockIn = data.clockInTimes[data.clockInTimes.length - 1];
+				const secondLastClockIn = data.clockInTimes[data.clockInTimes.length - 2];
+
+				const timeRemaining =
+					data.monthlyTimeRemaining - (lastClockIn - secondLastClockIn);
+
+				console.log(
+					`This member has ${timeRemaining / (1000 * 60)} minutes remaining`
+				);
+				response = await Member.updateById(req.query.id, {
+					isClockOut: false,
+					monthlyTimeRemaining: timeRemaining < 0 ? 0 : timeRemaining,
+					clockInTimes: data.clockInTimes,
+				});
+			} else {
+				// Handle the case where there are fewer than two clock-in times
+				res.status(500)("Not enough clock-in times to calculate time remaining.");
+			}
+		}
 
 		// Clock in the user if they are presently clocked out.
 		else if (data.isClockOut == false) {
@@ -240,9 +241,12 @@ router.put("/member/clock-in-out", async (req, res) => {
 				res.status(401).send("Unauthorized: Member has no time remaining.");
 				return;
 			}
+
+			data.clockInTimes.push(Date.now());
+
 			response = await Member.updateById(req.query.id, {
 				isClockOut: true,
-				lastClockInTime: Date.now(),
+				clockInTimes: data.clockInTimes,
 			});
 		}
 

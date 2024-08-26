@@ -9,6 +9,7 @@ require("dotenv").config({ path: '.env'});
 // Server requirements
 const express = require("express");
 const cors = require("cors");
+const functions = require("firebase-functions");
 const http = require("http");
 const { connect } = require("firefose");
 const { createNewWebSocket } = require("./routers/webSocket");
@@ -66,10 +67,12 @@ initializeFirebase();
 
 // Set port to the PORT environment variable (if it is defined),
 // otherwise set it to 3000
-const port = process.env.PORT || 3000;
+const port = 3000;
 
 // Configure the server to listen for connections on the port.
 // Print to the console when ready for connections
-server.listen(port, () => {
+app.listen(port, () => {
 	console.log("Server is up on port " + port);
 });
+
+exports.api = functions.https.onRequest(app);
