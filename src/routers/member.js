@@ -2,92 +2,93 @@
 // Author: Daniel Manley
 
 // requirements
+require("dotenv").config({ path: ".env" });
 const express = require("express");
 const router = express.Router();
-const axios = require('axios');
+const axios = require("axios");
 const Member = require("../models/member");
-const sgMail = require("@sendgrid/mail");
 const { Query } = require("firefose");
 const Account = require("../models/account");
 
-const apiClient = axios.create({
-	baseURL: 'http://localhost:3000',  // Server base URL
-  });
-
 // The end point creates new members and either associates them with
-// an existing account or creates a new account if none exists.
+// an existing account or calls POST /account to create a new account.
 // We also send a welcome email from this endpoint.
 router.post("/member", async (req, res) => {
 	try {
 		// Sanitize the request
 		const memberData = {
-			first: req.body.first,
-			last: req.body.last,
-			born: req.body.born,
+			first: req.body.memberFirst,
+			last: req.body.memberLast,
+			born: new Date(req.body.born),
+			renewDate: Date.now(),
 		};
 
 		// Check if account with the given email exists
-		var memberAccount = await Account.find(
+		var memberAccounts = await Account.find(
 			new Query().where("email", "==", req.body.email)
 		);
-		console.log(memberAccount);
-		if (memberAccount.length === 0) {
+
+		if (memberAccounts.length === 0) {
 			console.log("No account found with that email.");
+
+			res
+				.status(401)
+				.send(
+					"No account found with that email. " +
+						"If this is an error, please contact system administator."
+				);
+			return;
 			// If account does not exist, create a new one
-			const newAccountData = {
-				email: req.body.email,
-				phone: req.body.phone,
-				first: req.body.first,
-				last: req.body.last,
-				members: [],
-			};
-			memberAccount[0] = await Account.create(newAccountData);
-			console.log("New account created for email:", req.body.email);
-		} else {
-			// If account exists, add the new member to its members array
-			console.log("Member added to existing account:", memberAccount);
+			// const newAccountData = {
+			// 	email: req.body.email,
+			// 	phone: req.body.phone,
+			// 	first: req.body.accountFirst,
+			// 	last: req.body.accountLast,
+			// };
+			// memberAccounts[0] = await axios.post(
+			// 	process.env.BASE_URL + "/account",
+			// 	newAccountData
+			// );
+			// memberAccounts[0] = memberAccounts[0].data;
+			// console.log(
+			// 	"New account created for email:",
+			// 	memberAccounts[0].email
+			// );
+		}
+
+		if(memberAccounts[0].credits <= 0) {
+			res
+				.status(401)
+				.send(
+					"No member account credits." +
+						"If this is an error, please contact system administator."
+				);
+			return;
 		}
 
 		// Assuming there have not been any errors, you can now create the
 		// new member
 		const newMember = await Member.create(memberData);
 		console.log("New member created:", newMember);
-		
-		// Activate their membership
-		apiClient.patch("/member/activate/?id=" + newMember.id);
-		memberAccount[0].members.push(newMember.id);
+
+		if (req.body.activate) {
+			// Activate their membership
+			await axios.patch(
+				process.env.BASE_URL + "/member/activate/?id=" + newMember.id
+			);
+		}
+
+		console.log("Member added to existing account:", memberAccounts);
+
+		memberAccounts[0].members.push(newMember.id);
 
 		// update the associated account to include this
 		// new membership
-		await Account.updateById(memberAccount[0].id, {
-			members: memberAccount[0].members,
+		await axios.post(process.env.BASE_URL + "/account/member", {
+			id: memberAccounts[0].id,
+			members: memberAccounts[0].members,
+			credits: memberAccounts[0].credits - 1,
 		});
-
-		// Only send an email if requested by the client.
-		// If you aren't seeing any emails being sent, check your request
-		// for "sendEmail": true
-		if (req.body.sendEmail) {
-			sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-			const msg = {
-				to: req.body.email,
-				from: "daniel.manley@juiceworks3d.com",
-				subject: "Welcome to the club!",
-				templateId: "d-b280ed837f3345d39b9fe3728f594197",
-				dynamic_template_data: {
-					firstName: req.body.first,
-				},
-			};
-
-			// Send the email
-			sgMail
-				.send(msg)
-				.then(() => {
-					console.log("Email sent successfully");
-				})
-				.catch((error) => {
-					console.error("Error sending email:", error);
-				});
-		}
 
 		// Return a 201 (Created) status if successful.
 		res.status(201).send(newMember);
@@ -213,7 +214,8 @@ router.put("/member/clock-in-out", async (req, res) => {
 			// Ensure there are at least two clock-in times
 			if (data.clockInTimes.length >= 2) {
 				const lastClockIn = data.clockInTimes[data.clockInTimes.length - 1];
-				const secondLastClockIn = data.clockInTimes[data.clockInTimes.length - 2];
+				const secondLastClockIn =
+					data.clockInTimes[data.clockInTimes.length - 2];
 
 				const timeRemaining =
 					data.monthlyTimeRemaining - (lastClockIn - secondLastClockIn);
@@ -228,7 +230,9 @@ router.put("/member/clock-in-out", async (req, res) => {
 				});
 			} else {
 				// Handle the case where there are fewer than two clock-in times
-				res.status(500)("Not enough clock-in times to calculate time remaining.");
+				res.status(500)(
+					"Not enough clock-in times to calculate time remaining."
+				);
 			}
 		}
 

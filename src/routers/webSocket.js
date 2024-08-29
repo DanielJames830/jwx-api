@@ -13,8 +13,6 @@ function createNewWebSocket(server) {
 	if (!wss) {
 		wss = new WebSocket.Server({ server: server }); // Establish Websocket connection
 
-
-
 		wss.on("connection", (ws) => {
 			ws.isAlive = true;
 

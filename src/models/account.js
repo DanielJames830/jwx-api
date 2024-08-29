@@ -5,6 +5,7 @@
 const {Schema} = require('firefose');
 const {Model} = require('firefose');
 const {SchemaTypes} = require('firefose');
+const member = require('./member');
 const {String, Number, Array, Boolean} = SchemaTypes
 
 // Define each field an account should have,
@@ -14,12 +15,10 @@ const accountSchema = new Schema({
     email: {
         type: String,
         required: true,
-        unique: true,
     },
     phone: {
         type: String,
         required: true,
-        unique: true,
     },
     first: {
         type: String,
@@ -33,6 +32,10 @@ const accountSchema = new Schema({
     members: {
         type: Array,
         default: [],
+    },
+    credits: {
+        type: Number,
+        default: 0,
     }
 
 }, {timestamp: true},

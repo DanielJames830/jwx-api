@@ -7,7 +7,8 @@ const Account = require("../models/account");
 
 // Entry point for validation
 async function verifyAccountData(data) {
-   await checkDuplicateEmail(data.email);
+    console.log(data.email);
+    await checkDuplicateEmail(data.email);
 }
 
 // Check to see whether or not an email is already associated with an account.

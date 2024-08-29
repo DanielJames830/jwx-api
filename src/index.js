@@ -50,12 +50,6 @@ app.get("/", (req, res) => {
 	res.send("Hello World!");
 });
 
-// Create new server instance
-const server = http.createServer(app);
-
-// Create new web socket for terminal access
-createNewWebSocket(server);
-
 // Connect to database
 async function initializeFirebase() {
 	const credentials = JSON.parse(process.env.ACCOUNT_KEY);

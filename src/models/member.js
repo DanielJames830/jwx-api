@@ -6,7 +6,7 @@
 const {Schema} = require('firefose');
 const {Model} = require('firefose');
 const {SchemaTypes} = require('firefose');
-const {String, Number, Array, Boolean} = SchemaTypes;
+const {String, Number, Array, Boolean, Date} = SchemaTypes;
 const uuid = require('uuid');
 
 // Define each field an account should have,
@@ -22,8 +22,11 @@ const memberSchema = new Schema({
         required: true
     },
     born: {
+        type: Date,
+        required: true,
+    },
+    renewDate: {
         type: Number,
-        default: 1,
         required: true,
     },
     isClockOut: {
