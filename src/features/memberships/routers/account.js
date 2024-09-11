@@ -11,6 +11,9 @@ const Account = require("../models/account");
 // This endpoint is for creating accounts
 router.post("/account", async (req, res) => {
 	try {
+
+		req.body.phone = formatPhoneNumber(req.body.phone);
+
 		await verifyAccountData(req.body);
 
 		const data = await Account.create(req.body);
@@ -29,6 +32,16 @@ router.post("/account/member", async (req, res) => {
         res.status(400).send({error: e});
     }
 });
+
+function formatPhoneNumber(phoneNumber) {
+    // Remove all non-digit characters
+    phoneNumber = phoneNumber.replace(/\D/g, '');
+
+    // Format to (xxx) xxx-xxxx
+    phoneNumber = phoneNumber.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
+
+    return phoneNumber;
+}
 
 // This endpoint is for finding the account that contains a specific member
 router.put("/account", async (req, res) => {

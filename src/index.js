@@ -12,12 +12,11 @@ const cors = require("cors");
 const functions = require("firebase-functions");
 const http = require("http");
 const { connect } = require("firefose");
-const { createNewWebSocket } = require("./routers/webSocket");
 
 // Define routers here
-const accountRouter = require("./routers/account");
-const memberRouter = require("./routers/member");
-const webhooks = require("./routers/webhooks");
+const accountRouter = require("./features/memberships/routers/account");
+const memberRouter = require("./features/memberships/routers/member");
+const webhooks = require("./features/memberships/routers/webhooks");
 
 // new instance of the express server
 const app = express();

@@ -153,13 +153,13 @@ router.patch("/member/activate", async (req, res) => {
 		// Get the member with the correspoding Id.
 		const data = await Member.findById(req.query.id);
 		console.log(
-			`This member has been allotted ${28800000 / (1000 * 60)} minutes`
+			`This member has been allotted ${-1}`//28800000 / (1000 * 60)} minutes`
 		);
 
 		// Assign the member field monthlyTimeRemaining with 8 hours in miliseconds.
 		const data2 = await Member.updateById(req.query.id, {
 			isMembershipActive: true,
-			monthlyTimeRemaining: 28800000,
+			monthlyTimeRemaining: -1,
 		});
 
 		// return a 200 (OK) with the updated fields.
@@ -225,7 +225,7 @@ router.put("/member/clock-in-out", async (req, res) => {
 				);
 				response = await Member.updateById(req.query.id, {
 					isClockOut: false,
-					monthlyTimeRemaining: timeRemaining < 0 ? 0 : timeRemaining,
+					monthlyTimeRemaining: data.monthlyTimeRemaining == -1 ? -1 : timeRemaining < 0 ? 0 : timeRemaining,
 					clockInTimes: data.clockInTimes,
 				});
 			} else {
@@ -241,7 +241,7 @@ router.put("/member/clock-in-out", async (req, res) => {
 			console.log("Clocking in");
 
 			// Return a 401 (Unauthorized) status if the swiped member has no time remaining.
-			if (data.monthlyTimeRemaining <= 0) {
+			if (data.monthlyTimeRemaining == 0) {
 				res.status(401).send("Unauthorized: Member has no time remaining.");
 				return;
 			}

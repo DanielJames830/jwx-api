@@ -5,7 +5,6 @@
 const {Schema} = require('firefose');
 const {Model} = require('firefose');
 const {SchemaTypes} = require('firefose');
-const member = require('./member');
 const {String, Number, Array, Boolean} = SchemaTypes
 
 // Define each field an account should have,

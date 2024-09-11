@@ -8,7 +8,6 @@ require("dotenv").config({ path: ".env" });
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
-const { app } = require("firebase-admin");
 const Account = require("../models/account");
 const { Query } = require("firefose");
 const sgMail = require("@sendgrid/mail");
@@ -52,7 +51,7 @@ router.post("/webhooks/acuity", async (req, res) => {
 			account = postResponse.data;
 		}
 
-		await Account.updateById(account.id, { credits: account.credits + 1 });
+		await Account.updateById(account.id, { credits: account.credits + response.data.products[0].quantity });
 
 		sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 		const msg = {

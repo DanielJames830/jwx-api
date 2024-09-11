@@ -7,11 +7,7 @@ const {Schema} = require('firefose');
 const {Model} = require('firefose');
 const {SchemaTypes} = require('firefose');
 const {String, Number, Array, Boolean, Date} = SchemaTypes;
-const uuid = require('uuid');
 
-// Define each field an account should have,
-// the type is should be, whether or not it is required,
-// and what the default value should be.
 const memberSchema = new Schema({
     first: {
         type: String,
